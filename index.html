@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT_DEMO</title>
+    <style>
+        #msgBox li
+        {
+            list-style-type: none;
+        }
+    </style>
+</head>
+<body>
+    
+   
+    <input id="ipt1" type="text" placeholder="服务器地址" value="127.0.0.1">
+    <input id="ipt2" type="text" placeholder="用户名：如必要" value="admin">
+    <input id="ipt3" type="text" placeholder="密码：如必要" value="public">
+    <input id="btn1" type="button" value="start" onclick="start();">
+    <input id="btn2" type="button" value="sub" onclick="sub();">
+    <input id="btn3" type="button" value="pub" onclick="pub();">
+    <br>
+    <h3>客厅</h3>
+    <h5>灯光</h5>
+    <h5>风扇</h5>
+    <h5>温度</h5>
+    <br>
+    <h3>卧室</h3>
+    <h5>灯光</h5>
+    <h5>风扇</h5>
+    <h5>窗帘</h5>
+    <br>
+    <h3>房门</h3>
+    <br>
+    
+    <h3><b>信息列表</b></h3>
+    <ul id="msgBox">
+       
+        <!-- <li><b>>&emsp;</b>示例三十分的方法</li> -->
+        
+    </ul>
+    <!-- <script src="https://cdn.bootcdn.net/ajax/libs/mqtt/4.1.0/mqtt.min.js"></script> -->
+    <script src="./mqtt.min.js"></script>
+    <script>
+        var ipt1=document.getElementById('ipt1');
+        var ipt2=document.getElementById('ipt2');
+        var ipt3=document.getElementById('ipt3');
+        var btn1=document.getElementById('btn1');
+        var btn2=document.getElementById('btn2');
+        var btn3=document.getElementById('btn3');
+
+        var msgBox=document.getElementById('msgBox');
+
+
+
+        // add li
+        var old_msg=null;
+        function add_li(msg) {
+            let tmpLi=document.createElement('li');
+            
+            if(old_msg!=null && old_msg==msg)
+            {
+                return;
+            }
+            tmpLi.innerHTML="<b>>&emsp;</b>"+msg;               //<b>>&emsp;</b>内容
+            old_msg=msg;        //避免重复信息打印
+            msgBox.insertBefore(tmpLi,msgBox.children[0]);   //插入第一个
+            
+        }
+        // 
+        // 连接选项
+        var options = {
+            clean: true, // true: 清除会话, false: 保留会话
+            connectTimeout: 4000, // 超时时间
+            // 认证信息
+            clientId: 'test',	//客户端ID
+            username: 'admin', //连接用户名
+            password: 'public',//连接密码，默认为public,新版本登录后台界面会让你修改密码
+            // 心跳时间
+            keepalive: 60,
+        }
+
+        // 连接字符串, 通过协议指定使用的连接方式
+        var connectUrl = 'ws://127.0.0.1:8083/mqtt'; //连接服务端地址，注意查看ws协议对应的端口号
+        var client = null;
+        var client_d = null;    //订阅的回调函数 setInterval
+        var reload_window = null;    //无法连接服务器，启动刷新页面
+        var subTopicList=['mytopicLegal/lzbUser/#', 'justDemoNotUsed'];
+
+
+        function rec_msg() {
+            if(client==null)
+            {
+                btn1.removeAttribute("disabled");
+                btn2.removeAttribute("disabled");
+                btn3.removeAttribute("disabled");
+                clearInterval(client_d);
+                return;
+            }
+            //接收消息
+            client.on('message', (topic, message) => {
+                console.log('收到消息：', topic, message.toString());
+                add_li('收到消息：'+topic+' '+message.toString());
+            }) 
+        }
+
+        // -----------------------
+
+        function test() {
+            let strUrl="ws://"+ipt1.value+":8083/mqtt";
+            console.log(ipt1.value+"("+strUrl+")");
+            console.log(ipt2.value);
+            console.log(ipt3.value);
+            // 
+            if(ipt1.getAttribute("readonly")=="true")
+            {
+                ipt1.removeAttribute("readonly");
+                ipt2.removeAttribute("readonly");
+                ipt3.removeAttribute("readonly");
+            }
+            else
+            {
+                ipt1.setAttribute("readonly","true");
+                ipt2.setAttribute("readonly","true");
+                ipt3.setAttribute("readonly","true");
+            }
+          
+            // 
+            // btn1;
+            if(btn2.getAttribute("disabled")=="true")
+            {
+                btn2.removeAttribute("disabled");
+                btn3.removeAttribute("disabled");
+                return;
+            }
+            btn2.setAttribute("disabled","true");
+            btn3.setAttribute("disabled","true");
+        }
+
+        function start() {
+            // alert("start");
+
+            let strUrl="ws://"+ipt1.value+":8083/mqtt";
+            let opts = {
+                clean: true, // true: 清除会话, false: 保留会话
+                connectTimeout: 4000, // 超时时间
+                // 认证信息
+                clientId: 'test',	//客户端ID
+                username: ipt2.value, //连接用户名
+                password: ipt3.value,//连接密码，默认为public,新版本登录后台界面会让你修改密码
+                // 心跳时间
+                keepalive: 60,
+            }
+            
+            client = mqtt.connect(strUrl, opts);
+            // client = mqtt.connect(connectUrl, options);
+
+            client.on('connect', () => {
+                console.log('连接成功');
+                // 订阅多个主题
+                // client.subscribe(
+                //     ['tourist_enter', 'message_arrived'], //主题
+                //     { qos: 1 },
+                //     (err) => {
+                //         console.log(err || '订阅成功')
+                //     },
+                // );
+
+                btn1.setAttribute("disabled","true");
+                
+                add_li('连接成功');
+            })
+            
+            
+            //失败重连
+            client.on('reconnect', (error) => {
+                
+                console.log('正在重连:', error)
+                add_li('服务器连接失败，页面即将刷新');
+
+                if(reload_window==null)
+                {
+                    reload_window=setTimeout(()=>{
+                        location.reload();      //刷新页面
+                    },2000);
+                }
+
+                
+            })
+            //连接失败
+            client.on('error', (error) => {
+                console.log('连接失败:', error);
+                btn1.removeAttribute("disabled");
+                btn2.removeAttribute("disabled");
+                btn3.removeAttribute("disabled");
+                client=null;
+                add_li('连接失败');
+            })
+            // //接收消息
+            // client.on('message', (topic, message) => {
+            //     console.log('收到消息：', topic, message.toString())
+            // })  
+        }
+        
+        function sub() {
+            // alert("sub");
+            if(client!=null)
+            {
+                // 订阅多个主题
+                client.subscribe(
+                    subTopicList, //主题
+                    { qos: 1 },
+                    (err) => {
+                        console.log(err || '订阅成功')
+                        add_li(err || '订阅成功');
+                    },
+                );
+                
+                client_d = setInterval(rec_msg, 500);
+                
+                btn2.removeAttribute("disabled");
+                
+            }
+            
+        }
+
+        function pub() {
+            // alert("pub");
+
+            if(client!=null)
+            {
+                // 发布消息
+                client.publish('mytopicLegal/lzbUser/room1/light0', 'Hello EMQ X', (err) => {
+                    console.log(err || '发布成功');
+                    add_li(err || '发布成功');
+                })
+            }
+        }
+
+
+        function pub_aTime() {
+            // alert("pub");
+
+            if(client!=null)
+            {
+                // 发布消息
+                client.publish('tourist_enter', 'Hello EMQ X', (err) => {
+                    console.log(err || '发布成功')
+                })
+            }
+        }
+  
+    </script>
+    
+   
+</body>
+
+</html>
