@@ -87,6 +87,7 @@
         var client_d = null;    //订阅的回调函数 setInterval
         var reload_window = null;    //无法连接服务器，启动刷新页面
         var subTopicList=['mytopicLegal/lzbUser/#', 'justDemoNotUsed'];
+        var first_upTopic='mytopicLegal/lzbUser/app/up'
 
 
         function rec_msg() {
@@ -239,6 +240,7 @@
         }
 
 
+        
         function pub_aTime() {
             // alert("pub");
 
