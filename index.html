@@ -11,38 +11,71 @@
         }
     </style>
 </head>
-<body>
+<body style="width: max-content;">
     
-   
-    <input id="ipt1" type="text" placeholder="服务器地址" value="127.0.0.1">
-    <input id="ipt2" type="text" placeholder="用户名：如必要" value="admin">
-    <input id="ipt3" type="text" placeholder="密码：如必要" value="public">
-    <input id="btn1" type="button" value="start" onclick="start();">
-    <input id="btn2" type="button" value="sub" onclick="sub();">
-    <input id="btn3" type="button" value="pub" onclick="pub();">
-    <br>
-    <h3>客厅</h3>
-    <h5>灯光</h5>
-    <h5>风扇</h5>
-    <h5>温度</h5>
-    <br>
-    <h3>卧室</h3>
-    <h5>灯光</h5>
-    <h5>风扇</h5>
-    <h5>窗帘</h5>
-    <br>
-    <h3>房门</h3>
-    <br>
     
-    <h3><b>信息列表</b></h3>
-    <ul id="msgBox">
-       
-        <!-- <li><b>>&emsp;</b>示例三十分的方法</li> -->
-        
-    </ul>
+    <span><b>服务器地址：</b><input id="ipt1" type="text" placeholder="如无必要，不修改" value="127.0.0.1"></span> 
+    <br>
+    <br>
+    <span><b>用户名：</b><input id="ipt2" type="text" placeholder="如无必要，不修改" value="admin"></span> 
+    <span><b>密码：</b><input id="ipt3" type="text" placeholder="如无必要，不修改" value="public"></span> 
+    <br>
+    <br>
+    <span><b>默认主题：</b><input id="ipt3" type="text" placeholder="默认主题：" value="mytopicLegal/lzbUser/#" readonly></span> 
+    <input id="btn1" type="button" value="mqtt服务器连接" onclick="start();">
+    <input id="btn2" type="button" value="主题订阅" onclick="sub();">
+    <input id="btn3" type="button" value="一次发布测试" onclick="pub();"> 
+
+    <br>
+    <hr>
+    <br>
+    <dir style="width: 50%;padding-left: 22%;">
+
+        <div style="margin: auto;">
+            
+            <span>房门&emsp;<b><span id="sensor0">关闭</span></b></span>
+            <br>
+            <span>温度&emsp;<b><span id="sensor1">无</span></b>&emsp;；湿度&emsp;<b><span id="sensor2">无</span></b></span>
+            <br>
+            <div style="margin-top: 4%; padding-bottom: 2%; padding-left: 2%; padding-right: 2%; width: max-content; border: 1px solid rgb(6, 175, 226);">
+                <h4 style="margin-top: 0;">客厅</h4>
+                <span><b>灯光&emsp;</b><input id="live_btn1" type="button" value="开" onclick="f_lbtn1();">&emsp;&emsp;</span>
+                <span><b>风扇&emsp;</b><input id="live_btn2" type="button" value="开" onclick="f_lbtn2();">&emsp;&emsp;</span>
+            </div>
+            
+            <br>
+
+            <div style="margin-top: 4%; padding-bottom: 2%; padding-left: 2%; padding-right: 2%; width: max-content; border: 1px solid rgb(6, 175, 226);">
+                <h4 style="margin-top: 0;">卧室</h4>
+                <span>
+                    <b>灯光&emsp;</b>
+                    <input id="room_btn1" type="button" value="开" onclick="f_rbtn1();">&emsp;
+                    <input id="room_btna" type="button" value="自动模式：开" onclick="f_rbtna();">&emsp;
+                </span>
+                <br>
+                <br>
+                <span><b>风扇&emsp;</b><input id="room_btn2" type="button" value="开" onclick="f_rbtn2();">&emsp;&emsp;</span>
+                <span><b>窗帘&emsp;</b><input id="room_btn3" type="button" value="开" onclick="f_rbtn3();">&emsp;&emsp;</span>
+            </div>
+
+            <br>
+            <br>
+            <hr>
+            <h3><b>DEBUG信息列表</b></h3>
+            <ul id="msgBox">
+            
+                <!-- <li><b>>&emsp;</b>示例三十分的方法</li> -->
+            
+            </ul>
+
+        </div>
+
+    </dir>
+    
     <!-- <script src="https://cdn.bootcdn.net/ajax/libs/mqtt/4.1.0/mqtt.min.js"></script> -->
     <script src="./mqtt.min.js"></script>
     <script>
+        // mqtt连接发布等
         var ipt1=document.getElementById('ipt1');
         var ipt2=document.getElementById('ipt2');
         var ipt3=document.getElementById('ipt3');
@@ -52,7 +85,18 @@
 
         var msgBox=document.getElementById('msgBox');
 
+        // 家居信息和按钮
+        var live_btn1=document.getElementById('live_btn1');
+        var live_btn2=document.getElementById('live_btn2');
+        var room_btn1=document.getElementById('room_btn1');
+        var room_btn2=document.getElementById('room_btn2');
+        var room_btn3=document.getElementById('room_btn3');
+        var room_btna=document.getElementById('room_btna');
+        var sensor0=document.getElementById('sensor0');
+        var sensor1=document.getElementById('sensor1');
+        var sensor2=document.getElementById('sensor2');
 
+        
 
         // add li
         var old_msg=null;
@@ -87,9 +131,73 @@
         var client_d = null;    //订阅的回调函数 setInterval
         var reload_window = null;    //无法连接服务器，启动刷新页面
         var subTopicList=['mytopicLegal/lzbUser/#', 'justDemoNotUsed'];
-        var first_upTopic='mytopicLegal/lzbUser/app/up'
+        var linkSuccuss=false;
+
+        var legal_Topic='mytopicLegal/lzbUser/';
+        var first_upTopic='mytopicLegal/lzbUser/web/up';
+        var Auto_light=true;
+        var Door="0";
+        var Temp="00.00";
+        var Humi="00.00";
+
+        // ui upadte
+
+        function f_ra() {
+            let tmpTopic=legal_Topic+"room0/switchLight";
+            // just reverse
+            if(Auto_light==true)
+            {
+                room_btna.setAttribute("value","自动模式：关");
+                room_btn1.setAttribute("disabled","true");
+                Auto_light=false;
+            }
+            else if(Auto_light==false)
+            {
+                room_btna.setAttribute("value","自动模式：开");
+                room_btn1.removeAttribute("disabled");
+                Auto_light=true;
+            }
+            updateR();
+        }
+
+        function f_Upbtn(element,val) {
+            setTimeout(()=>{
+                element.setAttribute("value",val);
+            },50);
+        }
+
+        function f_UpSpan(element,val) {
+            setTimeout(()=>{
+                element.innerHTML=val;
+            },50);
+        }
+
+        // ------------------------
+        
+        function pub_aTime(topic,msg) {
+            if(client!=null)
+            {
+                if(topic!=first_upTopic)
+                {
+                    // 过滤更新的发布
+                    console.log("topic: "+topic+"  msg: "+msg);
+                }
+                // 发布消息
+                client.publish(topic, msg, (err) => {
+                    console.log(err || '发布成功')
+                })
+            }
+        }
+  
+        // 从控制端同步数据
+        function updateR() {
+            setTimeout(()=>{
+               pub_aTime(first_upTopic,"1"); 
+            },200);
+        }
 
 
+        // 门 温度 湿度 光感自动
         function rec_msg() {
             if(client==null)
             {
@@ -101,42 +209,172 @@
             }
             //接收消息
             client.on('message', (topic, message) => {
+                // console.log('rec_msg'+topic);
+                let wordArray=topic.split("/");
+                let msg=message;
+
+                if(wordArray.length!=4)
+                {
+                    console.log('wordArray.length '+wordArray.length);
+                    return;
+                }
+
+                if(wordArray[2]=="web")
+                {
+                    // 网页自己发出的
+                    return;
+                }
+
                 console.log('收到消息：', topic, message.toString());
-                add_li('收到消息：'+topic+' '+message.toString());
+                add_li('收到消息：'+message.toString()+'  ('+topic+'  (4:'+wordArray[3]);
+
+                // sensor state
+                // 
+                if(wordArray[3]=='sensor0_openFingerprint')
+                {
+                    //门 1：开；0：关；2：认证失败
+                    Door=msg;
+                    if(Door==1)
+                    {
+                        f_UpSpan(sensor0,"开启");
+                    }
+                    else if(Door==0)
+                    {
+                        f_UpSpan(sensor0,"关闭");
+                    }
+                    else if(Door==2)
+                    {
+                        f_UpSpan(sensor0,"认证失败");
+                    }
+                   
+                }
+                else if(wordArray[3]=='sensor0_temperature')
+                {
+                    // 温度整数
+                    let tmpArray=Temp.split('.');
+                    Temp=msg+"."+tmpArray[1];
+
+                    f_UpSpan(sensor1,Temp+"°C");
+                }
+                else if(wordArray[3]=='sensor0_humidity')
+                {
+                    // 湿度整数
+                    let tmpArray=Humi.split('.');
+                    Humi=msg+"."+tmpArray[1];
+                    
+                    f_UpSpan(sensor2,Humi+"%");
+                }
+                else if(wordArray[3]=='sensor0_temperature_decimal')
+                {
+                    // 温度小数
+                    let tmpArray=Temp.split('.');
+                    Temp=tmpArray[0]+"."+msg;
+                    
+                    f_UpSpan(sensor1,Temp+"°C");
+                }
+                else if(wordArray[3]=='sensor0_humidity_decimal')
+                {
+                    // 湿度小数
+                    let tmpArray=Humi.split('.');
+                    Humi=tmpArray[0]+"."+msg;
+
+                    f_UpSpan(sensor2,Humi+"%");
+                }
+                // sepcial...
+                // 
+                else if(wordArray[3]=='switchLight')
+                {
+                    // 自动感光
+                    if(msg=="1" && Auto_light==true)
+                    {
+                        f_ra();
+                    }
+                    else if(msg=="0" && Auto_light==false)
+                    {
+                        f_ra();
+                    }
+                    
+                }
+                // using btn
+                // 
+                else if(wordArray[3]=='light0') 
+                {
+                    // room_btn1
+                    if(msg=='0')
+                    {
+                        f_Upbtn(room_btn1,"开");
+                    }
+                    else
+                    {
+                        f_Upbtn(room_btn1,"关");
+                    }
+                }
+                else if(wordArray[3]=='fan0') 
+                {
+                    // room_btn2
+                    if(msg=='0')
+                    {
+                        f_Upbtn(room_btn2,"开");
+                    }
+                    else
+                    {
+                        f_Upbtn(room_btn2,"关");
+                    }
+                }
+                else if(wordArray[3]=='servo0') 
+                {
+                    // room_btn3
+                    if(msg=='0')
+                    {
+                        f_Upbtn(room_btn3,"开");
+                    }
+                    else
+                    {
+                        f_Upbtn(room_btn3,"关");
+                    }
+                }
+                else if(wordArray[3]=='light1') 
+                {
+                    // live_btn1
+                    if(msg=='0')
+                    {
+                        f_Upbtn(live_btn1,"开");
+                    }
+                    else
+                    {
+                        f_Upbtn(live_btn1,"关");
+                    }
+                }
+                else if(wordArray[3]=='fan1') 
+                {
+                    // live_btn2
+                    if(msg=='0')
+                    {
+                        f_Upbtn(live_btn2,"开");
+                    }
+                    else
+                    {
+                        f_Upbtn(live_btn2,"关");
+                    }
+                }
+                
             }) 
         }
 
-        // -----------------------
+        // ---------mqtt连接订阅发布入口--------------
+        
 
-        function test() {
-            let strUrl="ws://"+ipt1.value+":8083/mqtt";
-            console.log(ipt1.value+"("+strUrl+")");
-            console.log(ipt2.value);
-            console.log(ipt3.value);
-            // 
-            if(ipt1.getAttribute("readonly")=="true")
+        function test(msg) {
+            // mqtt.disconnect();
+
+            if(client!=null)
             {
-                ipt1.removeAttribute("readonly");
-                ipt2.removeAttribute("readonly");
-                ipt3.removeAttribute("readonly");
+                // 发布消息
+                client.publish('mytopicLegal/lzbUser/web/switchLight', '1', (err) => {
+                    console.log(err || '发布成功');
+                    add_li(err || '发布成功');
+                })
             }
-            else
-            {
-                ipt1.setAttribute("readonly","true");
-                ipt2.setAttribute("readonly","true");
-                ipt3.setAttribute("readonly","true");
-            }
-          
-            // 
-            // btn1;
-            if(btn2.getAttribute("disabled")=="true")
-            {
-                btn2.removeAttribute("disabled");
-                btn3.removeAttribute("disabled");
-                return;
-            }
-            btn2.setAttribute("disabled","true");
-            btn3.setAttribute("disabled","true");
         }
 
         function start() {
@@ -170,13 +408,14 @@
 
                 btn1.setAttribute("disabled","true");
                 
+                linkSuccuss=true;
                 add_li('连接成功');
             })
             
             
             //失败重连
             client.on('reconnect', (error) => {
-                
+                linkSuccuss=false;
                 console.log('正在重连:', error)
                 add_li('服务器连接失败，页面即将刷新');
 
@@ -192,6 +431,7 @@
             //连接失败
             client.on('error', (error) => {
                 console.log('连接失败:', error);
+                linkSuccuss=false;
                 btn1.removeAttribute("disabled");
                 btn2.removeAttribute("disabled");
                 btn3.removeAttribute("disabled");
@@ -220,7 +460,7 @@
                 
                 client_d = setInterval(rec_msg, 500);
                 
-                btn2.removeAttribute("disabled");
+                btn2.setAttribute("disabled","true");
                 
             }
             
@@ -229,10 +469,13 @@
         function pub() {
             // alert("pub");
 
+            test();
+            return;
+
             if(client!=null)
             {
                 // 发布消息
-                client.publish('mytopicLegal/lzbUser/room1/light0', 'Hello EMQ X', (err) => {
+                client.publish('mytopicLegal/lzbUser/web/test', '测试发送', (err) => {
                     console.log(err || '发布成功');
                     add_li(err || '发布成功');
                 })
@@ -240,19 +483,160 @@
         }
 
 
-        
-        function pub_aTime() {
-            // alert("pub");
 
-            if(client!=null)
+        // -----------------------------------------------------------------
+
+        
+        function f_lbtn1() {
+            // 灯光
+            let tmpTopic=legal_Topic+"live/light1";
+            if(live_btn1.value=="开")
             {
-                // 发布消息
-                client.publish('tourist_enter', 'Hello EMQ X', (err) => {
-                    console.log(err || '发布成功')
-                })
+                live_btn1.setAttribute("value","关");
+                pub_aTime(tmpTopic,'1');
             }
+            else
+            {
+                live_btn1.setAttribute("value","开");
+                pub_aTime(tmpTopic,'0');
+            }
+            updateR();
         }
-  
+
+        function f_lbtn2() {
+            // 风扇
+            let tmpTopic=legal_Topic+"live/fan1";
+            if(live_btn2.value=="开")
+            {
+                live_btn2.setAttribute("value","关")
+                pub_aTime(tmpTopic,'1');
+            }
+            else
+            {
+                live_btn2.setAttribute("value","开");
+                pub_aTime(tmpTopic,'0');
+            }
+            updateR();
+            
+        }
+
+        function f_rbtn1() {
+            // 灯光
+            // 可能与感光元件产生联动
+            let tmpTopic=legal_Topic+"room0/light0";
+
+            if(Auto_light)
+            {
+                return;
+            }
+
+
+            if(room_btn1.value=="开")
+            {
+                room_btn1.setAttribute("value","关")
+                pub_aTime(tmpTopic,'1');
+            }
+            else
+            {
+                room_btn1.setAttribute("value","开");
+                pub_aTime(tmpTopic,'0');
+            }
+            updateR();
+
+            
+        }
+
+        function f_rbtn2() {
+            // 风扇
+            let tmpTopic=legal_Topic+"room0/fan0";
+            if(room_btn2.value=="开")
+            {
+                room_btn2.setAttribute("value","关")
+                pub_aTime(tmpTopic,'1');
+            }
+            else
+            {
+                room_btn2.setAttribute("value","开");
+                pub_aTime(tmpTopic,'0');
+            }
+            updateR();
+            
+        }
+
+        function f_rbtn3() {
+            // 窗帘
+            let tmpTopic=legal_Topic+"room0/servo0";
+
+            if(room_btn3.value=="开")
+            {
+                room_btn3.setAttribute("value","关")
+                pub_aTime(tmpTopic,'1');
+            }
+            else
+            {
+                room_btn3.setAttribute("value","开");
+                pub_aTime(tmpTopic,'0');
+            }
+            updateR();
+            
+        }
+
+
+        function f_rbtna() {
+            let tmpTopic=legal_Topic+"room0/switchLight";
+            // reverse
+            if(Auto_light==true)
+            {
+                room_btna.setAttribute("value","自动模式：关");
+                room_btn1.setAttribute("disabled","true");
+                Auto_light=false;
+                pub_aTime(tmpTopic,'1');
+            }
+            else if(Auto_light==false)
+            {
+                room_btna.setAttribute("value","自动模式：开");
+                room_btn1.removeAttribute("disabled");
+                Auto_light=true;
+                pub_aTime(tmpTopic,'0');
+            }
+            updateR();
+        }
+
+
+        // ---------------onload finish
+        var olinkSuccuss=true;
+        window.onload=()=>{
+            // 
+            // 测试按钮
+            // WARNNING
+            btn3.remove();  
+            // 
+            setInterval(()=>{
+                if(linkSuccuss!=olinkSuccuss)
+                {
+                    olinkSuccuss=linkSuccuss;
+                    if(linkSuccuss)
+                    {     
+                        live_btn1.removeAttribute("disabled");
+                        live_btn2.removeAttribute("disabled");
+                        room_btn1.removeAttribute("disabled");
+                        room_btn2.removeAttribute("disabled");
+                        room_btn3.removeAttribute("disabled");
+                        room_btna.removeAttribute("disabled");
+                        
+                    }
+                    else
+                    {
+                        live_btn1.setAttribute("disabled","true");
+                        live_btn2.setAttribute("disabled","true");
+                        room_btn1.setAttribute("disabled","true");
+                        room_btn2.setAttribute("disabled","true");
+                        room_btn3.setAttribute("disabled","true");
+                        room_btna.setAttribute("disabled","true");
+                    }
+                }
+            },1000)
+        }
     </script>
     
    
