@@ -17,8 +17,8 @@
     <span><b>服务器地址：</b><input id="ipt1" type="text" placeholder="如无必要，不修改" value="127.0.0.1"></span> 
     <br>
     <br>
-    <span><b>用户名：</b><input id="ipt2" type="text" placeholder="如无必要，不修改" value="admin"></span> 
-    <span><b>密码：</b><input id="ipt3" type="text" placeholder="如无必要，不修改" value="public"></span> 
+    <span><b>用户名：</b><input id="ipt2" type="text" placeholder="如无必要，不修改" value="lzb"></span> 
+    <span><b>密码：</b><input id="ipt3" type="text" placeholder="如无必要，不修改" value="lzb"></span> 
     <br>
     <br>
     <span><b>默认主题：</b><input id="ipt3" type="text" placeholder="默认主题：" value="mytopicLegal/lzbUser/#" readonly></span> 
@@ -525,7 +525,7 @@
             // 可能与感光元件产生联动
             let tmpTopic=legal_Topic+"room0/light0";
 
-            if(Auto_light)
+            if(!Auto_light)
             {
                 return;
             }
