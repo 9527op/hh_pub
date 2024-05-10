@@ -29,7 +29,7 @@
     <br>
     <hr>
     <br>
-    <dir style="width: 50%;padding-left: 22%;">
+    <div style="width: 92%;padding-left: 8%;">
 
         <div style="margin: auto;">
             
@@ -70,7 +70,7 @@
 
         </div>
 
-    </dir>
+    </div>
     
     <!-- <script src="https://cdn.bootcdn.net/ajax/libs/mqtt/4.1.0/mqtt.min.js"></script> -->
     <script src="./mqtt.min.js"></script>
@@ -226,7 +226,8 @@
                 }
 
                 console.log('收到消息：', topic, message.toString());
-                add_li('收到消息：'+message.toString()+'  ('+topic+'  (4:'+wordArray[3]);
+                add_li('收到消息：'+msg+'<br>'+topic);
+                // add_li('收到消息：<br>'+topic+'  (4:'+wordArray[3]);
 
                 // sensor state
                 // 
